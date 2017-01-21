@@ -47,9 +47,7 @@ from picamera import PiCamera
 from threading import Thread
 from PiVideoStream import PiVideoStream
 
-from ownINIT import get_lline
-from ownINIT import get_rline
-from ownINIT import get_corners
+from ownINIT import *
 from UDP import send_UDP #own UDO functions
 
 ##PARAMETER ######################################################################################
@@ -61,22 +59,16 @@ dispH = 480   #display height to calibrate coordinats
 # Display Settings
 debug = True        # Set to False for no data display
 window_on =  True    # Set to True displays opencv windows (GUI desktop reqd)
-SHOW_CIRCLE = True  # show a circle otherwise show bounding rectancle on window
-CIRCLE_SIZE = 8     # diameter of circle to show motion location in window
-LINE_THICKNESS = 1  # thickness of bounding line in pixels
-WINDOW_BIGGER = 1   # Resize multiplier for Movement Status Window
-                    # if gui_window_on=True then makes opencv window bigger
-                    # Note if the window is larger than 1 then a reduced frame rate will occur            
 
 # Camera Settings
 CAMERA_WIDTH = 320
 CAMERA_HEIGHT = 240  # 240
-big_w = int(CAMERA_WIDTH * WINDOW_BIGGER)
-big_h = int(CAMERA_HEIGHT * WINDOW_BIGGER)      
+    
 CAMERA_HFLIP = False
 CAMERA_VFLIP = False
 CAMERA_ROTATION=0
 CAMERA_FRAMERATE = 60 #90
+THRESHOLD_SENSITIVITY = 100 #seems to be a good guess for most situations
 
 
 FRAME_COUNTER = 100
@@ -87,8 +79,7 @@ global click
 click = False
 
 #initialize points
-refPt = []  #clicked point
-points = [] #list of points
+points = [] #list of clicked points
 
 # UDP settings
 UDP_IP = "192.168.0.103"
@@ -98,47 +89,47 @@ lengthOnePackage = 480 #<500
 # LED settings
 LED_COUNT = 97
 
+#TO DO : rename the Function and add a parameter status.
+#			#status is a list of 4 elements containing so called status_l status_o status_r status_u
+#			#rewrite the code below ;)
 
-#-----------------------------------------------------------------------------------------------  
 def show_FPS(start_time,frame_count):
-    if debug:
-        if frame_count >= FRAME_COUNTER:
-            duration = float(time.time() - start_time)
-            FPS = float(frame_count / duration)
-            print("Processing at %.2f fps last %i frames" %( FPS, frame_count))
-            frame_count = 0
-            start_time = time.time()
-        else:
-            frame_count += 1
-    return start_time, frame_count
+	if frame_count >= FRAME_COUNTER:
+		duration = float(time.time() - start_time)
+		FPS = float(frame_count / duration)
+		print("Processing at %.2f fps last %i frames" %( FPS, frame_count))
+		frame_count = 0
+		start_time = time.time()
+	else:
+		frame_count += 1
+	return start_time, frame_count
 
-#-----------------------------------------------------------------------------------------------  
 def click_event(event, x_click, y_click, flags, param):
-        # grab references to the global variables
-        global refPt
-        global points
-        global click
-        global x,y
-        x = x_click
-        y = y_click
+	# grab references to the global variables
+	global points
+	global click
+	global x,y
+	x = x_click
+	y = y_click
 
 
 
-        # if the left mouse button was clicked, record the starting
-        # (x, y) coordinates 
-        if event == cv2.EVENT_LBUTTONDOWN :
-                x = ((x * 10000) * CAMERA_WIDTH / dispW ) / 10000
-                y = ((y * 10000) * CAMERA_HEIGHT / dispH ) / 10000
-                refPt = [(x , y)]
-                points.append(refPt)
-                print(points)
-                #print(len(points))
+	# if the left mouse button was clicked, record the starting
+	# (x, y) coordinates 
+	if event == cv2.EVENT_LBUTTONDOWN :
+			x = ((x * 10000) * CAMERA_WIDTH / dispW ) / 10000
+			y = ((y * 10000) * CAMERA_HEIGHT / dispH ) / 10000
+			refPt = [(x , y)]
+			points.append(refPt)
+			print(points)
+			#print(len(points))
 
-        if event == cv2.EVENT_RBUTTONDOWN :
-            print("x: " + str(x) + ", y: " + str(y) + ";")
-            #print("R: " + str(image2[x][y]) + ", G: " + str(image2[x][y][1]) + ", G: " + str(image2[x][y][2]))
-            print()
-            click = 1
+	if event == cv2.EVENT_RBUTTONDOWN :
+		print("x: " + str(x) + ", y: " + str(y) + ";")
+		#print("R: " + str(image2[x][y]) + ", G: " + str(image2[x][y][1]) + ", G: " + str(image2[x][y][2]))
+		print()
+		click = 1
+
         
 
                 
@@ -169,19 +160,14 @@ def Ambilight():
     start_time = time.time()
     still_scanning = True
 
-
-    #INIT
-
-    THRESHOLD_SENSITIVITY = 100 #seems to be a good guess for most situations
     #some blinking in the biginning to test RGB
     send_UDP("a255 000 000",UDP_IP,UDP_PORT,lengthOnePackage)
-    print("red")
+    time.sleep(0.2)
+    send_UDP("a000 255 000",UDP_IP,UDP_PORT,lengthOnePackage)
+    time.sleep(0.2)
+    send_UDP("a255 000 255",UDP_IP,UDP_PORT,lengthOnePackage)
+
 	
-    sock = socket.socket(socket.AF_INET, #Internet
-    socket.SOCK_DGRAM) #UDP
-    MSG="a0 0 255"
-    sock.sendto(MSG,(UDP_IP,UDP_PORT))
-    time.sleep(1)
 
     #Get two images with a delay of 0.5s to find screen
     image1 = vs.read()
@@ -197,63 +183,12 @@ def Ambilight():
     
 
 
-
-    left = get_lline(big_w,big_h,grayimage1)
-
-    right = get_rline(big_w,big_h,grayimage1)
-    
-    coord_list = get_corners(left,right)
-
-    prev_time = time.time()
-    time.sleep(0.01)
-    print(time.time() - prev_time)
-
-    
-
-    
-
-    #find algorithm to find corners
-
-
-    #points = np.float32(left)
-    # mow borders should contain the left border
-    #left_border = cv2.fitLine(left,1, 0, 0.01, 0.01)
-
-
-    points = []
-
+	# get points by calculating the corners
+    #left = get_lline(CAMERA_WIDTH,CAMERA_HEIGHT,grayimage1)
+    #right = get_rline(CAMERA_WIDTH,CAMERA_HEIGHT,grayimage1)
+    #points= get_corners(left,right)
         
-    cv2.namedWindow("image")
-    cv2.setMouseCallback("image", click_event)   #callback-function for mouse pointer
-
-        
-    #while loop to get TV coordinates
-    print("press r to reset points, press c to continue")
-    while True:
-        # display the image and wait for a keypress
-        image2 = vs.read()
-        image2= cv2.resize( image2,( dispW, dispH ))
-        cv2.imshow("image", image2)
-        
-        key = cv2.waitKey(1) & 0xFF
-
-        # if the 'r' key is pressed, reset 
-        if key == ord("r"):
-            cv2.destroyAllWindows()
-            cv2.namedWindow("image")
-            cv2.setMouseCallback("image", click_event)   #callback-function for mouse pointer
-            points = []
-            print("points cleared")
-
-        # if the 'c' key is pressed, break from the loop
-        elif key == ord("c"):
-            cv2.destroyAllWindows()
-            cv2.namedWindow("image")
-            cv2.setMouseCallback("image", click_event)   #callback-function for mouse pointer
-            break
-            
-    # close all open windows
-    cv2.destroyWindow("coordinates_image")
+    points = click_coordinates(vs, cv2, dispW, dispH) #get points by clicking the corners of the screen
 
 
     
@@ -285,7 +220,9 @@ def Ambilight():
     MSG_COUNT = 0
 
     DATA_COUNT = 0
-
+	
+	#initalize the mouse callback for the image
+	#to do ... some scaling for the window or another callback or rule or something
     cv2.namedWindow("image")
     cv2.setMouseCallback("image", click_event) 
         
@@ -312,17 +249,9 @@ def Ambilight():
         dst = cv2.warpPerspective(image2,M,(HLED,VLED))
         #dst = cv2.cvtColor(dst,   cv2.COLOR_HSV2RBG) #color transformation CV_HSV2BGR , cv2.COLOR_XYZ2BGR
 
-        ##create a line vector with BGR values in it
-        #      first row , last colomn  , last row flipped         , first colomn flipped
-
-        MESSAGE2 = "a255 255 255"
 
         adr = 0
         MESSAGE = ""
-        MSG1 = ""
-        MSG2 = ""
-        MSG3 = ""
-        MSG4 = ""
 
         if (stats_l > 1000):
             print ("stats l " + str(stats_l))
@@ -420,8 +349,8 @@ def Ambilight():
 
  
         if window_on:
-            dst = cv2.resize( dst,( big_w, big_h ))
-            cv2.imshow('Movement Status  (Press q in Window to Quit)', dst)
+            dst = cv2.resize( dst,( CAMERA_WIDTH, CAMERA_HEIGHT ))
+            cv2.imshow('image', dst)
             
             # Close Window if q pressed while movement status window selected
             if cv2.waitKey(1) & 0xFF == ord('q'):
