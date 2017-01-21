@@ -47,7 +47,10 @@ from picamera import PiCamera
 from threading import Thread
 from PiVideoStream import PiVideoStream
 
-import UDP #own UDO functions
+from ownINIT import get_lline
+from ownINIT import get_rline
+from ownINIT import get_corners
+from UDP import send_UDP #own UDO functions
 
 ##PARAMETER ######################################################################################
 HLED = 30	#number of horizontal LEDs
@@ -139,7 +142,7 @@ def click_event(event, x_click, y_click, flags, param):
         
 
                 
-def motion_track():
+def Ambilight():
     
     global points
     global x,y
@@ -170,13 +173,10 @@ def motion_track():
     #INIT
 
     THRESHOLD_SENSITIVITY = 100 #seems to be a good guess for most situations
-
     #some blinking in the biginning to test RGB
-    sock = socket.socket(socket.AF_INET, #Internet
-    socket.SOCK_DGRAM) #UDP
-    MSG="a255 0 0"
-    sock.sendto(MSG,(UDP_IP,UDP_PORT))
-
+    send_UDP("a255 000 000",UDP_IP,UDP_PORT,lengthOnePackage)
+    print("red")
+	
     sock = socket.socket(socket.AF_INET, #Internet
     socket.SOCK_DGRAM) #UDP
     MSG="a0 0 255"
@@ -194,117 +194,21 @@ def motion_track():
     # Convert to gray scale, which is easier
     grayimage1 = cv2.cvtColor(thresholdimage1, cv2.COLOR_BGR2GRAY)
     cv2.imshow("th_bw_image", grayimage1)   #plot black/white result of thresholded image difference
+    
 
 
-    #find left points
-    print("processing left line")
-    prev_time = time.time()
-    i = 0 #index of left borders
-    left = []
-    line = 0
-    while line < big_h:
-        colomn = 0
-        while colomn < len(grayimage1[0,:]):
-            if (grayimage1.item(line,colomn) != 0) & (colomn < big_w) & (line < big_h):
-                left.append([ line,colomn])
-                #print(left[i])
-                i = i + 1
-                break
-            
-            colomn = colomn + 1 #Increment colomn
-            
-        line = line + 1 #Increment line
-        i = 0
-    print("took " + str(time.time() - prev_time) + "seconds to process left line;")
 
-        
-    #find right points
-    print("processing right line")
-    prev_time = time.time()
-    j = 0 #index of right borders
-    right = []
-    line = 0
-    while line < big_h:
-        colomn = big_w -1
-        while colomn > 0:
-            if (grayimage1.item(line,colomn) != 0) & (colomn > 0) & (line > 0):
-                right.append([line,colomn])
-                #print(right[j])
-                j = j + 1
-                break
-            
-            colomn = colomn - 1
-            
-        line = line + 1 #Increment line
-        j = 0
-    print("took " + str(time.time() - prev_time) + "seconds to process right line;")
+    left = get_lline(big_w,big_h,grayimage1)
+
+    right = get_rline(big_w,big_h,grayimage1)
+    
+    coord_list = get_corners(left,right)
 
     prev_time = time.time()
     time.sleep(0.01)
     print(time.time() - prev_time)
 
-    #symmetric line
-    line1 = []
-    line2 = []
-    x1,y1 = left[0]
-    x2,y2 = left[len(left)-1]
-    #y = k * x + d
-    k = float(x2-x1)/float(y2-y1)
-    d = y1 - float((x2-x1)*x1)/float(y2-y1)
-
-    print("symmetric data")
-    print("k: " + str(k))
-    print("d: " + str(d))
-
-    #calculate left line
-    i = 0
-    while i < len(left):
-        xline,yline = left[i]
-        line1.append(yline - (k * float(xline) + d))
-        i = i + 1
-
-    #calculate right line
-    i = 0
-    while i < len(right):
-        xline,yline = right[i]
-        line2.append(yline - (k * float(xline) + d))
-        i = i + 1
-
-    coord_list = []
     
-    print("1st coordinate")
-    print(left[line1.index(min(line1))])
-    coord_list.append(left[line1.index(min(line1))])
-    x1,y1 = left[line1.index(min(line1))]
-
-    print("3rd coordinate")
-    print(left[0])
-    coord_list.append(left[0])
-    x3,y3 = left[0]
-
-    print("4th coordinate")
-    print(left[len(left)-1])
-    coord_list.append(left[len(left)-1])
-    x4,y4 = left[len(left)-1]
-        
-    print("2nd coordinate")
-    print(right[line2.index(max(line2))])
-    coord_list.append(right[line2.index(max(line2))])
-    x2,y2 = right[line2.index(max(line2))]    
-
-    left = []
-    right = []
-
-    #rotate x and y coordinates in coord_list
-    i = 0
-    while i < len(coord_list):
-        coord_list[i].reverse()
-        i = i + 1
-
-    print()
-    print("corner points")
-    print(coord_list)
-    points = np.float32(coord_list)
 
     
 
@@ -497,14 +401,14 @@ def motion_track():
             old_b[adr]= (dst[VLED-1,xhelp,0])
             adr = adr + 1;
         
-        sock = socket.socket(socket.AF_INET, #Internet
-        socket.SOCK_DGRAM) #UDP
+
 
         
         
         length_MESSAGE = len(MESSAGE)
 
         DATA_COUNT = DATA_COUNT + len(MESSAGE)
+        send_UDP(MESSAGE,UDP_IP,UDP_PORT,lengthOnePackage)
 
         #print every 100th msg len for debug
         MSG_COUNT = MSG_COUNT + 1
@@ -512,8 +416,7 @@ def motion_track():
             print("message length " + str(length_MESSAGE))
             print ("sent: "+str(DATA_COUNT))
             MSG_COUNT = 0
-            
-        send_UDP(MESSAGE,UDP_IP,UDP_PORT)
+
 
  
         if window_on:
@@ -529,7 +432,7 @@ def motion_track():
 ##MAIN ######################################################################################  
 if __name__ == '__main__':
     try:
-        motion_track()
+        Ambilight()
     finally:
         print("")
         print("+++++++++++++++++++++++++++++++++++")

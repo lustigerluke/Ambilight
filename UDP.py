@@ -1,8 +1,13 @@
 	# length_MESSAGE
-	# lengthOnePackage
 	# UDP_IP
 	# UDP_PORT
-def send_UDP(MESSAGE,UDP_IP,UDP_PORT):
+import socket
+import time
+
+def send_UDP(MESSAGE,UDP_IP,UDP_PORT,lengthOnePackage):
+	sock = socket.socket(socket.AF_INET, #Internet
+	socket.SOCK_DGRAM) #UDP
+	
 	length_MESSAGE = len(MESSAGE)
 	start = 0
 	while length_MESSAGE > lengthOnePackage + start:
@@ -16,3 +21,4 @@ def send_UDP(MESSAGE,UDP_IP,UDP_PORT):
 			sock.sendto(MSG,(UDP_IP,UDP_PORT))
 			time.sleep(0.005) #give the message some time - TO BE REMOVED IF RECEIVE IS FAST ENOUGH
 			
+	
