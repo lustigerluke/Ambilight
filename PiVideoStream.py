@@ -3,10 +3,11 @@ from picamera.array import PiRGBArray
 from picamera import PiCamera
 from threading import Thread
 
+
 class PiVideoStream:
 	def __init__(self, CAMERA_WIDTH, CAMERA_HEIGHT, CAMERA_FRAMERATE, rotation, hflip, vflip):
 		self._CAMERA_WIDTH = CAMERA_WIDTH
-		self._CAMERA_Height= CAMERA_HEIGHT
+		self._CAMERA_HEIGHT= CAMERA_HEIGHT
 		self._CAMERA_FRAMERATE = CAMERA_FRAMERATE
 		self._rotation = rotation
 		self._hflip = hflip

@@ -1,8 +1,6 @@
-	# length_MESSAGE
-	# UDP_IP
-	# UDP_PORT
 import socket
 import time
+import config
 
 def send_UDP(MESSAGE,UDP_IP,UDP_PORT,lengthOnePackage):
 	sock = socket.socket(socket.AF_INET, #Internet
