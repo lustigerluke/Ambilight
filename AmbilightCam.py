@@ -50,7 +50,9 @@ from PiVideoStream import PiVideoStream
 from ownINIT import *
 from UDP import send_UDP #own UDO functions
 from user_interface import *
+from createMessage import *
 import config
+
 
 ##PARAMETER ######################################################################################
 
@@ -64,7 +66,6 @@ CAMERA_HFLIP = False
 CAMERA_VFLIP = False
 CAMERA_ROTATION=0
 CAMERA_FRAMERATE = 60 #90
-THRESHOLD_SENSITIVITY = 100 #seems to be a good guess for most situations
 
 
 FRAME_COUNTER = 100
@@ -72,13 +73,19 @@ FRAME_COUNTER = 100
 #initialize points
 points = [] #list of clicked points
 
-# UDP settings
-UDP_IP = "192.168.0.103"
-UDP_PORT = 2390        
-lengthOnePackage = 480 #<500
+old_r = {}
+old_g = {}
+old_b = {}
+old = [old_r, old_g, old_b]
 
-# LED settings
-LED_COUNT = 97
+stats_l = 0 
+stats_o = 0
+stats_r = 0 
+stats_u = 0
+stats = [stats_l, stats_o, stats_l, stats_u]
+
+THRESHOLD = 50
+
 
 #TO DO : rename the Function and add a parameter status.
 #			#status is a list of 4 elements containing so called status_l status_o status_r status_u
@@ -98,15 +105,14 @@ def show_STATUS(start_time,frame_count,stats):
 	return start_time, frame_count, stats
 
 
-	
-
-        
 
                 
 def Ambilight():
 	
 	global x,y
 	global click
+	global stats
+	global old
 	click = 0
 	
 	print("Initializing Camera ....")
@@ -117,25 +123,24 @@ def Ambilight():
 	vs.start()
 	vs.camera.rotation = CAMERA_ROTATION
 	vs.camera.hflip = CAMERA_HFLIP
-	vs.camera.vflip = CAMERA_VFLIP
-	time.sleep(1)    
-	
+	vs.camera.vflip = CAMERA_VFLIP  
+	vs.camera.sharpness = 0
+	vs.camera.contrast = 0	
+	vs.camera.brightness = 50
+	vs.camera.saturation = 0
+	vs.camera.ISO = 0
+	vs.camera.video_stabilization = False
+	vs.camera.exposure_compensation = 0
+	vs.camera.exposure_mode = 'auto'
+	vs.camera.meter_mode = 'average'
+	vs.camera.awb_mode = 'auto'
+	vs.camera.image_effect = 'none'
+	vs.camera.color_effects = None
+	vs.camera.crop = (0.0, 0.0, 1.0, 1.0)
 		
-	
-	cx = 0
-	cy = 0
-	cw = 0
-	ch = 0
 	frame_count = 0
 	start_time = time.time()
 	still_scanning = True
-	
-	#some blinking in the biginning to test RGB
-	send_UDP("a255 000 000",UDP_IP,UDP_PORT,lengthOnePackage)
-	time.sleep(0.2)
-	send_UDP("a000 255 000",UDP_IP,UDP_PORT,lengthOnePackage)
-	time.sleep(0.2)
-	send_UDP("a255 000 255",UDP_IP,UDP_PORT,lengthOnePackage)
 	
 
 	M = get_M(vs,cv2) #get transformation matrix
@@ -146,36 +151,17 @@ def Ambilight():
 	else:
 		print("press ctrl-c to quit")
 	
-	old_r = {}
-	old_g = {}
-	old_b = {}
-	led_count = config.VLED*2+config.HLED*2
-	
-	stats_l = 0 
-	stats_o = 0
-	stats_r = 0
-	stats_u = 0
-	stats = [stats_l, stats_o, stats_l, stats_u]
-	
-	THRESHOLD = 50
-	
-	MSG_COUNT = 0
-	
-	DATA_COUNT = 0
+
 	
 	#initalize the mouse callback for the image
 	#to do ... some scaling for the window or another callback or rule or something
-	cv2.namedWindow("image")
-	cv2.setMouseCallback("image", click_event) 
+	cv2.namedWindow("TVimage")
+	cv2.setMouseCallback("TVimage", click_event) 
 		
 	#LOOP-------------------------------------------------------------------------------------------
 	while still_scanning:
-	
-		#read image
-		image2 = vs.read()
-		cv2.imshow("image", image2)
 		
-		meanVec = cv2.mean(image2)
+		image2 = vs.read()		
 		
 		if (click == True):
 			print(x)
@@ -187,88 +173,23 @@ def Ambilight():
 			
 		#call function to generate fps output
 		start_time, frame_count, stats = show_STATUS(start_time, frame_count,stats)
-	
+		
+		#transform image with the generated transformation matrix M
 		dst = cv2.warpPerspective(image2,M,(config.HLED,config.VLED))
+		
+		#find some way to get good RGB values and process the little image because it is faster to process small images ;)
 		#dst = cv2.cvtColor(dst,   cv2.COLOR_HSV2RBG) #color transformation CV_HSV2BGR , cv2.COLOR_XYZ2BGR
-	
-	
-		adr = 0
-		MESSAGE = ""
 		
+		#create UDP Message
+		MESSAGE, stats, old = create_Message(dst,stats,old)
 		
-		while adr < config.VLED :
-			#assume if red is set others are as well
-			if (adr in old_r):                
-				if (abs((int(old_r[adr]) - int(dst[(config.VLED-adr)-1,0,2]))) < THRESHOLD) and (abs((int(old_g[adr]) - int(dst[(config.VLED-adr)-1,0,1]))) < THRESHOLD) and (abs((int(old_b[adr]) - int(dst[(config.VLED-adr)-1,0,0]))) < THRESHOLD):
-					stats[0] = stats[0] + 1
-				else:
-					MESSAGE = MESSAGE + "A" + str("%03d" % (adr,)) + "R" + str("%03d" % (dst[(config.VLED-adr)-1,0,2])) + "G" + str("%03d" % (dst[(config.VLED-adr)-1,0,1])) + "B" + str("%03d" % (dst[(config.VLED-adr)-1,0,0]))    
-			old_r[adr]= (dst[(config.VLED-adr)-1,0,2])
-			old_g[adr]= (dst[(config.VLED-adr)-1,0,1])
-			old_b[adr]= (dst[(config.VLED-adr)-1,0,0])
-			adr = adr + 1;
-	
-		#18
-		while adr < config.HLED + config.VLED:
-			#assume if red is set others are as well
-			if (adr in old_r):                
-				if (abs((int(old_r[adr]) - int(dst[0,adr-config.VLED,2]))) < THRESHOLD) and (abs((int(old_r[adr]) - int(dst[0,adr-config.VLED,1]))) < THRESHOLD) and (abs((int(old_r[adr]) - int(dst[0,adr-config.VLED,0]))) < THRESHOLD):
-					stats[1] = stats[1] + 1
-				else:
-					MESSAGE = MESSAGE + "A" + str("%03d" % (adr,)) + "R" + str("%03d" % (dst[0,adr-config.VLED,2],)) + "G" + str("%03d" % (dst[0,adr-config.VLED,1],)) + "B" + str("%03d" % (dst[0,adr-config.VLED,0],))
-			old_r[adr]= (dst[0,adr-config.VLED,2])
-			old_g[adr]= (dst[0,adr-config.VLED,1])
-			old_b[adr]= (dst[0,adr-config.VLED,0])
-			adr = adr + 1;
-		#48
-		while adr < config.HLED + 2 * config.VLED:
-			#assume if red is set others are as well
-			if (adr in old_r):                
-				if (abs((int(old_r[adr]) - int(dst[adr-config.VLED-config.HLED,config.HLED-1,2]))) < THRESHOLD) and (abs((int(old_r[adr]) - int(dst[adr-config.VLED-config.HLED,config.HLED-1,1]))) < THRESHOLD) and (abs((int(old_r[adr]) - int(dst[adr-config.VLED-config.HLED,config.HLED-1,0]))) < THRESHOLD):
-					stats[2] = stats[2] + 1
-				else:
-					MESSAGE = MESSAGE + "A" + str("%03d" % (adr,)) + "R" + str("%03d" % (dst[adr-config.VLED-config.HLED,config.HLED-1,2],)) + "G" + str("%03d" % (dst[adr-config.VLED-config.HLED,config.HLED-1,1],)) + "B" + str("%03d" % (dst[adr-config.VLED-config.HLED,config.HLED-1,0],))
-			old_r[adr]= (dst[adr-config.VLED-config.HLED,config.HLED-1,2])
-			old_g[adr]= (dst[adr-config.VLED-config.HLED,config.HLED-1,1])
-			old_b[adr]= (dst[adr-config.VLED-config.HLED,config.HLED-1,0])
-			adr = adr + 1;
-	
-		#66
-		while adr < 2 * config.HLED + 2 * config.VLED :
-			xhelp = config.HLED-(adr-config.HLED-2*config.VLED)-1 #caöculate a help value
-	
-			#assume if red is set others are as well
-			if (adr in old_r):                
-				if (abs((int(old_r[adr]) - int(dst[config.VLED-1,xhelp,2]))) < THRESHOLD) and (abs((int(old_r[adr]) - int(dst[config.VLED-1,xhelp,1]))) < THRESHOLD) and (abs((int(old_r[adr]) - int(dst[config.VLED-1,xhelp,0]))) < THRESHOLD):
-					stats[3] = stats[3] + 1
-				else:                    
-					MESSAGE = MESSAGE + "A" + str("%03d" % (adr,)) + "R" + str("%03d" % (dst[config.VLED-1,xhelp,2],)) + "G" + str("%03d" % (dst[config.VLED-1,xhelp,1],)) + "B" + str("%03d" % (dst[config.VLED-1,xhelp,0],))
-			old_r[adr]= (dst[config.VLED-1,xhelp,2])
-			old_g[adr]= (dst[config.VLED-1,xhelp,1])
-			old_b[adr]= (dst[config.VLED-1,xhelp,0])
-			adr = adr + 1;
-		
-	
-	
-		
-		
-		length_MESSAGE = len(MESSAGE)
-	
-		DATA_COUNT = DATA_COUNT + len(MESSAGE)
-		send_UDP(MESSAGE,UDP_IP,UDP_PORT,lengthOnePackage)
-	
-		#print every 100th msg len for debug
-		MSG_COUNT = MSG_COUNT + 1
-		if (MSG_COUNT > 100):
-			print("message length " + str(length_MESSAGE))
-			print ("sent: "+str(DATA_COUNT))
-			MSG_COUNT = 0
-	
+		#send the MESSAGE
+		send_UDP(MESSAGE)
 	
 	
 		if window_on:
 			dst = cv2.resize( dst,( config.CAMERA_WIDTH, config.CAMERA_HEIGHT ))
-			cv2.imshow('image', dst)
+			cv2.imshow('TVimage', dst)
 			
 			# Close Window if q pressed while movement status window selected
 			if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -277,8 +198,8 @@ def Ambilight():
 				still_scanning = False
 		
 			if cv2.waitKey(1) & 0xFF == ord('i'):
+				print("new init-process")
 				cv2.destroyAllWindows()
-				print("End Motion Tracking")
 				M = get_M(vs,cv2) #get new transformation Matrix
 				
 
