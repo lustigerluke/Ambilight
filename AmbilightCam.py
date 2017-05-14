@@ -124,24 +124,27 @@ def Ambilight():
 	vs.camera.rotation = CAMERA_ROTATION
 	vs.camera.hflip = CAMERA_HFLIP
 	vs.camera.vflip = CAMERA_VFLIP  
-	vs.camera.sharpness = 0
-	vs.camera.contrast = 0	
-	vs.camera.brightness = 50
-	vs.camera.saturation = 0
-	vs.camera.ISO = 0
-	vs.camera.video_stabilization = False
-	vs.camera.exposure_compensation = 0
-	vs.camera.exposure_mode = 'auto'
-	vs.camera.meter_mode = 'average'
-	vs.camera.awb_mode = 'auto'
-	vs.camera.image_effect = 'none'
-	vs.camera.color_effects = None
-	vs.camera.crop = (0.0, 0.0, 1.0, 1.0)
+	#vs.camera.sharpness = 0
+	#vs.camera.contrast = 0	
+	#vs.camera.brightness = 50
+	#vs.camera.saturation = 0
+	#vs.camera.ISO = 0
+	#vs.camera.video_stabilization = False
+	#vs.camera.exposure_compensation = 0
+	#vs.camera.exposure_mode = 'auto'
+	#vs.camera.meter_mode = 'average'
+	#vs.camera.awb_mode = 'auto'
+	#vs.camera.image_effect = 'none'
+	#vs.camera.color_effects = None
+	#vs.camera.crop = (0.0, 0.0, 1.0, 1.0)
 		
 	frame_count = 0
 	start_time = time.time()
 	still_scanning = True
 	
+	#TO DO: find the fastest way to initialize the camera
+	time.sleep(1.0) #time for camera to initialize
+
 
 	M = get_M(vs,cv2) #get transformation matrix
 	
@@ -193,7 +196,7 @@ def Ambilight():
 			
 			# Close Window if q pressed while movement status window selected
 			if cv2.waitKey(1) & 0xFF == ord('q'):
-				cv2.destroyAllWindows()
+				#cv2.destroyAllWindows()
 				print("End Motion Tracking")
 				still_scanning = False
 		

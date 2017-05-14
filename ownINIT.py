@@ -11,169 +11,72 @@ from threading import Thread
 from PiVideoStream import PiVideoStream
 
 
-def find_led_spotpoints1(vs, cv2):
-	delay = 0.2 #this parameter could give some hint to the overall delay time. 
-	
-	find_led_spotpoints1(vs, cv2)
-	
-	#some blinking in the biginning to test RGB
-	print("BEGIN: show corner LEDs to find Screen" )
-	
-	send_UDP("a000 000 000") #make everything black
-	time.sleep(delay)
-	bground_image = vs.read()
-	
-	#lower left corner
-	send_UDP("A%03dR255G000B000" %( 2*(config.VLED + config.HLED)))
-	send_UDP("A%03dR255G000B000" %( 0))
-	send_UDP("A%03dR255G000B000" %( 1))
-	time.sleep(delay)
-	ll_image = vs.read()
-
-	#upper left corner
-	send_UDP("A%03dR255G000B000" %( config.VLED -1))
-	send_UDP("A%03dR255G000B000" %( config.VLED))
-	send_UDP("A%03dR255G000B000" %( config.VLED +1))
-	time.sleep(delay)
-	ul_image = vs.read()
-	
-	#upper right corner
-	send_UDP("A%03dR255G000B000" %( config.VLED + config.HLED -1))
-	send_UDP("A%03dR255G000B000" %( config.VLED + config.HLED))
-	send_UDP("A%03dR255G000B000" %( config.VLED + config.HLED +1))
-	time.sleep(delay)
-	ur_image = vs.read()
-	
-	#lower right corner
-	send_UDP("A%03dR255G000B000" %( 2 * config.VLED + config.HLED -1))
-	send_UDP("A%03dR255G000B000" %( 2 * config.VLED + config.HLED))
-	send_UDP("A%03dR255G000B000" %( 2 * config.VLED + config.HLED +1))
-	time.sleep(delay)
-	lr_image = vs.read()
-	
-	send_UDP("a000 000 000") #make everything black
-	time.sleep(delay)
-	bground_image = vs.read()
-	
-	#lower right corner blue
-	send_UDP("A%03dR000G000B255" %( 2 * config.VLED + config.HLED -1))
-	send_UDP("A%03dR000G000B255" %( 2 * config.VLED + config.HLED))
-	send_UDP("A%03dR000G000B255" %( 2 * config.VLED + config.HLED +1))
-	time.sleep(delay)
-	lr_b_image = vs.read()
-
-	send_UDP("a000 000 000") #make everything black
-	time.sleep(delay)
-	bground_image = vs.read()
-	
-	#lower right corner blue
-	send_UDP("A%03dR000G255B000" %( 2 * config.VLED + config.HLED -1))
-	send_UDP("A%03dR000G255B000" %( 2 * config.VLED + config.HLED))
-	send_UDP("A%03dR000G255B000" %( 2 * config.VLED + config.HLED +1))
-	time.sleep(delay)
-	lr_g_image = vs.read()
-
-	
-
-	
-	
-	image = cv2.absdiff(ll_image,bground_image)
-	image[:,:,0] = 0
-	image[:,:,1] = 0
-	gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) #convert to grayscale
-	(minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(gray) #find area
-	cv2.circle(image, maxLoc, 5, (0,255 , 0), 2) #add a circle at the coordinates to the image
-	cv2.imshow("1",image)
-	
-	image = cv2.absdiff(ul_image,ll_image)
-	image[:,:,0] = 0
-	image[:,:,1] = 0
-	gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) #convert to grayscale
-	(minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(gray) #find area
-	cv2.circle(image, maxLoc, 5, (0,255 , 0), 2) #add a circle at the coordinates to the image
-	cv2.imshow("2",image)
-	
-	image = cv2.absdiff(ur_image,ul_image)
-	image[:,:,0] = 0
-	image[:,:,1] = 0
-	gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) #convert to grayscale
-	(minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(gray) #find area
-	cv2.circle(image, maxLoc, 5, (0,255 , 0), 2) #add a circle at the coordinates to the image
-	cv2.imshow("3",image)
-	
-	image = cv2.absdiff(lr_image,ur_image)
-	image[:,:,0] = 0
-	image[:,:,1] = 0
-	gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) #convert to grayscale
-	(minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(gray) #find area
-	cv2.circle(image, maxLoc, 5, (0,255 , 0), 2) #add a circle at the coordinates to the image
-	cv2.imshow("4",image)
-	r_image =image
-	
-	
-	image = cv2.absdiff(lr_b_image,r_image)
-	image[:,:,0] = 0
-	image[:,:,1] = 0
-	gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) #convert to grayscale
-	(minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(gray) #find area
-	cv2.circle(image, maxLoc, 5, (0,255 , 0), 2) #add a circle at the coordinates to the image
-	cv2.imshow("4r",image)
-	
-	image = cv2.absdiff(lr_g_image,r_image)
-	image[:,:,0] = 0
-	image[:,:,1] = 0
-	gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) #convert to grayscale
-	(minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(gray) #find area
-	cv2.circle(image, maxLoc, 5, (0,255 , 0), 2) #add a circle at the coordinates to the image
-	cv2.imshow("4g",image)
-	
-		
-
-
-	points = []
-	
-	
-	
-	return points
-
 
 def find_led_spotpoints(vs, cv2):
 	
 	delay = 0.2 #this parameter could give some hint to the overall delay time. 
 	
-	corners = [0, config.VLED, config.VLED + config.HLED, 2 * config.VLED + config.HLED ]
-	corner_count = len(corners)
+	corners = [config.VLED, config.VLED + config.HLED,0, 2 * config.VLED + config.HLED ]	
 	
-	colors = ['R255G000B000','R000G255B000','R000G000B255']
-	color_count = len(colors)
+	colors = ['R255G000B000','R000G000B255','R000G255B000']
 	
 	print("new way to find corners")
 	
-	color = 0
-	while color < color_count:
+
+	points =[]
+	
+	corner = 0
+	while corner < len(corners):
 		
-		corner = 0
-		while corner < corner_count:
-			
-			send_UDP("a000 000 000") #make everything black
-			time.sleep(delay)
-			bground_image = vs.read()
-			
-			send_UDP(''.join(["A%03d"%( corners[corner] + 1) + colors[color] ])) # what about corners[corner] = 0?
-			send_UDP(''.join(["A%03d"%( corners[corner]) + colors[color] ]))
-			send_UDP(''.join(["A%03d"%( corners[corner] - 1) + colors[color] ]))
-			time.sleep(delay)
-			image = vs.read()
-			
-			print("processed corner # %03d " %(corner))
-			print(''.join(["A%03d"%( corners[corner]) + colors[color] ]))
-			
-			image = cv2.absdiff(image,bground_image)
-			cv2.imshow(''.join(["A%03d"%( corners[corner]) + colors[color] ]),image)
-			
-			corner = corner + 1
+
 		
-		color = color +1
+		send_UDP("a000 000 000") #make everything black
+		time.sleep(delay)
+		corner_image = vs.read()
+		bground_image = corner_image
+	
+		color = 0
+		#while color < len(colors):
+		
+			#if (corners[corner] == 0):
+				#send_UDP(''.join(["A%03d"%( config.HLED * 2 + config.VLED * 2) + colors[color] ])) 
+			#else:
+				#send_UDP(''.join(["A%03d"%( corners[corner] - 1) + colors[color] ]))
+			#send_UDP(''.join(["A%03d"%( corners[corner]) + colors[color] ]))
+			#send_UDP(''.join(["A%03d"%( corners[corner] + 1) + colors[color] ]))
+			#time.sleep(delay)
+			#image = vs.read()
+			
+			#print("processed corner # %03d " %(corner))
+			#print(''.join(["A%03d"%( corners[corner]) + colors[color] ]))
+			
+			##image = cv2.absdiff(image,bground_image)
+			
+			#corner_image= cv2.absdiff(corner_image,image)
+
+			#color = color +1
+			
+		retval, thresholdimage1 = cv2.threshold(corner_image,config.THRESHOLD_SENSITIVITY,255,cv2.THRESH_BINARY)
+		print(cv2.minMaxLoc(corner_image))
+		print("ccc")
+		print(cv2.minMaxLoc(thresholdimage1))
+		
+		(minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(corner_image) #find area
+		cv2.circle(corner_image, maxLoc, 5, (0,255 , 0), 2) #add a circle at the coordinates to the image
+		
+		cv2.imshow(''.join(["Ac%03d"%( corners[corner])]),corner_image)
+		
+		print([maxLoc[0] / len(colors), maxLoc[1] / len(colors)])
+		points.append([maxLoc[0] / len(colors), maxLoc[1] / len(colors)])
+		
+		corner = corner + 1
+	
+	
+	print("find_led_spotpoints found following points")
+	print(points)
+
+	return points
+		
 		
 	
 	
@@ -207,10 +110,17 @@ def get_M(vs, cv2):
 	##print("got left and right line")
 	##points = get_corners(left,right)
 	
-	points = find_led_spotpoints(vs, cv2)
+	image2 = vs.read()
+	image2= cv2.resize( image2,( config.dispW, config.dispH ))
+	cv2.imshow("image", image2)
+	print("sleep ")
+	time.sleep(3.0)
+	
+	#points = find_led_spotpoints(vs, cv2)
 	
 	points = click_coordinates(vs, cv2) #get points by clicking the corners of the screen
-	
+	print("points for actual setup 24.02.2017")
+	print([[(58, 84)], [(180, 81)], [(56, 156)], [(178, 167)]])
 	
 	
 	#TRANSFORM
