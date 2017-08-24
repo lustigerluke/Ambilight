@@ -12,6 +12,6 @@ dispW = 720   #display width to calibrate coordinats
 dispH = 480   #display height to calibrate coordinats
 
 # UDP settings
-UDP_IP = "192.168.0.103"
+UDP_IP = "192.168.1.116"
 UDP_PORT = 2390        
 lengthOnePackage = 480 #<500

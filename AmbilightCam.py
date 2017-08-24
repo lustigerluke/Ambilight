@@ -87,6 +87,7 @@ stats = [stats_l, stats_o, stats_l, stats_u]
 THRESHOLD = 50
 
 
+
 #TO DO : rename the Function and add a parameter status.
 #			#status is a list of 4 elements containing so called status_l status_o status_r status_u
 #			#rewrite the code below ;)
@@ -105,8 +106,6 @@ def show_STATUS(start_time,frame_count,stats):
 	return start_time, frame_count, stats
 
 
-
-                
 def Ambilight():
 	
 	global x,y
@@ -138,14 +137,15 @@ def Ambilight():
 	#vs.camera.color_effects = None
 	#vs.camera.crop = (0.0, 0.0, 1.0, 1.0)
 		
+		
 	frame_count = 0
 	start_time = time.time()
 	still_scanning = True
 	
-	#TO DO: find the fastest way to initialize the camera
+	
 	time.sleep(1.0) #time for camera to initialize
 
-
+	#TO DO: find the fastest way to initialize the camera
 	M = get_M(vs,cv2) #get transformation matrix
 	
 	

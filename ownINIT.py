@@ -88,27 +88,27 @@ def get_M(vs, cv2):
 	
 	print("starting loop to find points")
 	
-	#while (len(left) < 4) & (len(right) < 4):
-		#print("wait some tine before taking the next picture")
-		#time.sleep(0.2)
-		#image1 = vs.read()
-		#time.sleep(0.2)
-		#image2 = vs.read()
+	while (len(left) < 4) & (len(right) < 4):
+		print("wait some tine before taking the next picture")
+		time.sleep(0.2)
+		image1 = vs.read()
+		time.sleep(0.2)
+		image2 = vs.read()
 
-		#diffimage1 = cv2.absdiff(image2, image1)
-		#retval, thresholdimage1 = cv2.threshold(diffimage1,config.THRESHOLD_SENSITIVITY,255,cv2.THRESH_BINARY)
-		#grayimage1 = cv2.cvtColor(thresholdimage1, cv2.COLOR_BGR2GRAY)
+		diffimage1 = cv2.absdiff(image2, image1)
+		retval, thresholdimage1 = cv2.threshold(diffimage1,config.THRESHOLD_SENSITIVITY,255,cv2.THRESH_BINARY)
+		grayimage1 = cv2.cvtColor(thresholdimage1, cv2.COLOR_BGR2GRAY)
 		
-		## get points by calculating the corners
-		#left = get_lline(grayimage1)
-		#right = get_rline(grayimage1)		
+		# get points by calculating the corners
+		left = get_lline(grayimage1)
+		right = get_rline(grayimage1)		
 		
-		#cv2.imshow("th_bw_image", grayimage1)
+		cv2.imshow("th_bw_image", grayimage1)
 		
 
 	
 	##print("got left and right line")
-	##points = get_corners(left,right)
+	points = get_corners(left,right)
 	
 	image2 = vs.read()
 	image2= cv2.resize( image2,( config.dispW, config.dispH ))
@@ -116,7 +116,7 @@ def get_M(vs, cv2):
 	print("sleep ")
 	time.sleep(3.0)
 	
-	#points = find_led_spotpoints(vs, cv2)
+	#~ points = find_led_spotpoints(vs, cv2)
 	
 	points = click_coordinates(vs, cv2) #get points by clicking the corners of the screen
 	print("points for actual setup 24.02.2017")
