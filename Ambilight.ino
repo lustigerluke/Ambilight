@@ -5,11 +5,8 @@
 
 
 //WIFI CONFIG
-const char *ssid = "Floppy_Disk_W2"; //  your network SSID (name)
-const char *pass = "Luc1lle#";       // your network password
-
-int debug = 0;
-
+const char *ssid = "FloppyDisk_W2"; //  your network SSID (name)
+const char *pass = "****";       // your network password
 
 //UDP CONFIG
 WiFiUDP udp;
@@ -17,10 +14,10 @@ unsigned int localPort = 2390;  // local port to listen for UDP packets
 
 //LED CONFIG
 #define NUM_LEDS 96             // How many leds in your strip?
-#define DATA_PIN 1              // Status LED
+#define DATA_PIN 3              // Status LED
 #define DATA_PIN1 4             // Leiste 1
 
-CRGB statusled[1];
+CRGB statusled[2];
 CRGB leds[NUM_LEDS];
 
 
@@ -42,7 +39,15 @@ int processed_LED60_counter = 0;
 
 void setup()
 {
-  delay(1000);
+  Serial.print("LED setup: ");
+  FastLED.addLeds<NEOPIXEL, DATA_PIN>(statusled, 1);
+  FastLED.addLeds<NEOPIXEL, DATA_PIN1>(leds, NUM_LEDS);
+  
+  for(int x = 0; x < NUM_LEDS ; x++){  leds[x] = CRGB(defRED,defGREEN,defBLUE);}
+  statusled[0] = CRGB(55,55,0);
+  FastLED.show();   //update led stripe
+  
+  //delay(1000);
   Serial.begin(115200);
   Serial.println();
   Serial.println();
@@ -64,21 +69,30 @@ void setup()
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
   Serial.println(WiFi.macAddress());
+  
+  int ip = WiFi.localIP();
+  Serial.println(ip);
+  ip = ip - 1694607551;
+  Serial.println(ip);
+  
+  for (int i=0; i<ip; i++){
+    statusled[0] = CRGB(0,0,0);
+    FastLED.show();
+    delay(100);
+    statusled[0] = CRGB(0,0,55);
+    FastLED.show();
+    delay(100);
+  }
 
   Serial.println("Starting UDP");
   udp.begin(localPort);
-  Serial.print("Local port: ");
+  Serial.println("Local port: ");
   Serial.println(udp.localPort());
-
-
-  Serial.print("LED setup: ");
-  FastLED.addLeds<WS2812B, DATA_PIN>(statusled, 1);
-  FastLED.addLeds<NEOPIXEL, DATA_PIN1>(leds, NUM_LEDS);
- 
-  for(int x = 0; x < NUM_LEDS ; x++){  leds[x] = CRGB(defRED,defGREEN,defBLUE);}
+  
+  statusled[0] = CRGB(0,50,0);
   FastLED.show();   //update led stripe
   
-  Serial.println("done!");
+  Serial.println("setup done!");
 }
 
 void loop()
