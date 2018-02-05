@@ -41,7 +41,7 @@ def click_coordinates(vs, cv2):
 			break
 
 	# close all open windows
-	cv2.destroyWindow("coordinates_image")
+	cv2.destroyWindow("image")
 
 	return points
 

@@ -21,8 +21,30 @@ class PiVideoStream:
 		self.camera.hflip = hflip
 		self.camera.vflip = vflip
 		self.camera.brightness = 40
+		self.camera.exposure_mode = 'night'
+		self.camera.awb_mode = 'shade'
+		self.meter_mode = 'backlit'
+		
 		self.rawCapture = PiRGBArray(self.camera, size=resolution)
 		self.stream = self.camera.capture_continuous(self.rawCapture,
+		
+			#~ vs.sharpness = 0
+	#~ vs.contrast = 0
+	#~ vs.brightness = 50
+	#~ vs.saturation = 0
+	#~ vs.ISO = 0
+	#~ vs.video_stabilization = False
+	#~ vs.exposure_compensation = 100		#
+	#~ vs.exposure_mode = 'night'			#
+	#~ vs.meter_mode = 'backlit'
+	#~ vs.awb_mode = 'shade'				#
+	#~ vs.image_effect = 'none'
+	#~ vs.color_effects = None
+	#~ vs.rotation = 0
+	#~ vs.hflip = False
+	#~ vs.vflip = False
+	#~ vs.crop = (0.0, 0.0, 1.0, 1.0)	
+		
 		format="bgr", use_video_port=True)
 	
 	        # initialize the frame and the variable used to indicate

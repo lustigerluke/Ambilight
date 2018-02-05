@@ -56,20 +56,6 @@ import config
 
 ##PARAMETER ######################################################################################
 
-# Display Settings
-debug = True        # Set to False for no data display
-window_on =  True    # Set to True displays opencv windows (GUI desktop reqd)
-
-
-    
-CAMERA_HFLIP = False
-CAMERA_VFLIP = False
-CAMERA_ROTATION=0
-CAMERA_FRAMERATE = 60 #90
-
-
-FRAME_COUNTER = 100
-
 #initialize points
 points = [] #list of clicked points
 
@@ -93,7 +79,7 @@ THRESHOLD = 50
 #			#rewrite the code below ;)
 
 def show_STATUS(start_time,frame_count,stats):
-	if frame_count >= FRAME_COUNTER:
+	if frame_count >= config.FRAME_COUNTER:
 		duration = float(time.time() - start_time)
 		FPS = float(frame_count / duration)
 		print("Processing at %.2f fps last %i frames" %( FPS, frame_count))
@@ -117,39 +103,25 @@ def Ambilight():
 	print("Initializing Camera ....")
 	# Save images to an in-program stream
 	# Setup video stream on a processor Thread for faster speed
-	#vs = PiVideoStream().__init__(self, resolution=(config.CAMERA_WIDTH , config.CAMERA_HEIGHT), framerate=CAMERA_FRAMERATE, rotation=0, hflip=False, vflip=False)
-	vs = PiVideoStream(config.CAMERA_WIDTH, config.CAMERA_HEIGHT,CAMERA_FRAMERATE, 0 ,0, 0)
-	vs.start()
-	vs.camera.rotation = CAMERA_ROTATION
-	vs.camera.hflip = CAMERA_HFLIP
-	vs.camera.vflip = CAMERA_VFLIP  
-	#vs.camera.sharpness = 0
-	#vs.camera.contrast = 0	
-	#vs.camera.brightness = 50
-	#vs.camera.saturation = 0
-	#vs.camera.ISO = 0
-	#vs.camera.video_stabilization = False
-	#vs.camera.exposure_compensation = 0
-	#vs.camera.exposure_mode = 'auto'
-	#vs.camera.meter_mode = 'average'
-	#vs.camera.awb_mode = 'auto'
-	#vs.camera.image_effect = 'none'
-	#vs.camera.color_effects = None
-	#vs.camera.crop = (0.0, 0.0, 1.0, 1.0)
-		
+
+	vs = PiVideoStream(config.CAMERA_WIDTH, config.CAMERA_HEIGHT,config.CAMERA_FRAMERATE, 0 ,0, 0)
+	vs.start()		
 		
 	frame_count = 0
 	start_time = time.time()
 	still_scanning = True
 	
-	
 	time.sleep(1.0) #time for camera to initialize
+	
+	image = vs.read()
+	cv2.namedWindow("first_Image")
+	cv2.imshow("first_Image", image)
 
 	#TO DO: find the fastest way to initialize the camera
 	M = get_M(vs,cv2) #get transformation matrix
 	
 	
-	if window_on:
+	if config.window_on:
 		print("press q to quit opencv display")
 	else:
 		print("press ctrl-c to quit")
@@ -190,7 +162,7 @@ def Ambilight():
 		send_UDP(MESSAGE)
 	
 	
-		if window_on:
+		if config.window_on:
 			dst = cv2.resize( dst,( config.CAMERA_WIDTH, config.CAMERA_HEIGHT ))
 			cv2.imshow('TVimage', dst)
 			
